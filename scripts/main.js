@@ -78,7 +78,6 @@ system.runTimeout(() => {
 })
 })
 
-
 system.beforeEvents.startup.subscribe((init) => {
 
 
@@ -98,7 +97,6 @@ system.beforeEvents.startup.subscribe((init) => {
   init.customCommandRegistry.registerCommand(commands[13], realtime);
  
 });
-
 
 function realtime(origin, condition) {
   if ( condition == 1 ){
@@ -153,10 +151,6 @@ system.runInterval(()=>{
   } 
 }, 100)
 
-
-
-
-
 function economyadd(origin, target, amount){
   system.runTimeout(() => {
     
@@ -186,6 +180,7 @@ function economyadd(origin, target, amount){
 
 
 }
+
 function economyremove(origin, target, amount) {
   system.runTimeout(() => {
     const isexisted = world.scoreboard.getObjective("economy")
@@ -404,13 +399,10 @@ function party(origin, { partyTarget }) {
   return { status: CustomCommandStatus.Success };
 }
 
-
 world.afterEvents.entityDie.subscribe((event) => {
     const player = event.deadEntity;
     const scoreboard = world.scoreboard.getObjective("death");
-    if(!scoreboard){
-        world.scoreboard.addObjective("death", "dummy");
-    }
+    if(!scoreboard) world.scoreboard.addObjective("death", "dummy");
     scoreboard.addScore(player, 1);
 });
 
