@@ -49,32 +49,26 @@ system.runTimeout(() => {
    const minute = createdate.getUTCMinutes()
    console.log(minute)
    const currenttime = Math.round(mctick(hours, minute))
-   console.log('rounded curr time after reload:' + currenttime)
-    const saved_tick = world.getDynamicProperty('saved_tick') 
-    if (saved_tick == undefined){
-     
-      world.setDynamicProperty('saved_tick', currenttime);
-      w.runCommand(`time set ${currenttime}`)
-    }
-    console.log('saved tick:' + saved_tick)
-  
-   console.log('current time:' + currenttime)
-   const tickdiff = currenttime - saved_tick
-   if(saved_tick < currenttime || saved_tick == currenttime){
-    const rounded_tickdiff = Math.round(tickdiff)
-    w.runCommand(`time add ${rounded_tickdiff}`)
-    const newsavetick = Math.round(saved_tick + rounded_tickdiff) 
-    world.setDynamicProperty('saved_tick', newsavetick)
-    console.log('saved tick:' + (newsavetick))
+  const getworldday = world.getTimeOfDay()
+
+  console.log('rounded curr time after reload:' + currenttime)
+
+   console.log('current time (getworldday):' + getworldday)
+  if( getworldday < currenttime || getworldday == currenttime){
+    const deltatime = currenttime - getworldday
+    w.runCommand(`time add ${deltatime}`)
+    // const newsavetick = Math.round(saved_tick + rounded_tickdiff) 
+    // world.setDynamicProperty('saved_tick', newsavetick)
+    // console.log('saved tick:' + (newsavetick))
    } else {
-    const dayleft = 24000 - saved_tick
+    const dayleft = 24000 - getworldday
     const ticktotal = dayleft + currenttime
     const rounded_ticktotal = Math.round(ticktotal)
     w.runCommand(`time add ${rounded_ticktotal}`)
 
-    const newsavetick = Math.round(saved_tick + rounded_ticktotal) 
-    world.setDynamicProperty('saved_tick', newsavetick)
-    console.log('saved tick:' + (newsavetick))
+    // const newsavetick = Math.round(saved_tick + rounded_ticktotal) 
+    // world.setDynamicProperty('saved_tick', newsavetick)
+    // console.log('saved tick:' + (newsavetick))
    }
   } else {
     console.log('rltime is not initialized !')
@@ -109,30 +103,21 @@ system.beforeEvents.startup.subscribe((init) => {
 function realtime(origin, condition) {
   if ( condition == 1 ){
     system.runTimeout(() => {
- const createdate = new Date()
+   const createdate = new Date()
    const hours = createdate.getUTCHours()+UTC
    console.log(hours)
    const minute = createdate.getUTCMinutes()
    console.log(minute)
    console.log(mctick(hours, minute))
    const currenttime = Math.round(mctick(hours, minute))
-   const dt = world.getDay()
-      const multiplier = (dt*24000)+currenttime
-   const getrltimetick = world.getDynamicProperty('rltime')
-   world.setDynamicProperty('rltime', multiplier)
+  //  const timeofday = world.getTimeOfDay()
+   const day = world.getDay()
+   const multiplier = (day*24000)+currenttime
 
-   console.log('rounded curr time:' + currenttime)
+  world.getDimension('overworld').runCommand(`time set ${multiplier}`)
+  world.setDynamicProperty('rltime', true)
+  console.log('real time enabled')
 
-
-      world.setDynamicProperty('rltime', true)
-      // // const adjustcurrenttime 
-      // world.setDynamicProperty('saved_tick: ', 0)
-      
-      console.log('day'+ world.getDay())
-      console.log('multiplier: ' + multiplier)
-      world.getDimension('overworld').runCommand(`time set ${multiplier}`)
-      world.setDynamicProperty('saved_tick: ', currenttime)
-      console.log('real time enabled')
     })
   } else {
     world.setDynamicProperty('rltime', false)
@@ -157,15 +142,14 @@ system.runInterval(()=>{
       const hours = createdate.getUTCHours()+UTC
       const minute = createdate.getUTCMinutes()
       const currenttime = Math.round(mctick(hours, minute))
-      console.log(currenttime)
-      const saved_tick = world.getDynamicProperty('saved_tick') ?? currenttime
-      console.log(saved_tick)
-      // w.runCommand(`time add ${currenttime}`)
-      const tickdiff = currenttime - saved_tick
-      const rounded_tickdiff = Math.round(tickdiff)
-      w.runCommand(`time add ${rounded_tickdiff}`)
-      world.setDynamicProperty('saved_tick', currenttime)
-      console.log('saved tick:' + currenttime)
+      const timeofday = world.getTimeOfDay();
+      const deltatime = currenttime - timeofday
+      console.log(`currenttime: ${currenttime} || timeofday: ${timeofday} || deltatime: ${deltatime}`)
+      // // w.runCommand(`time add ${currenttime}`)
+      // const tickdiff = currenttime - saved_tick
+      // const rounded_tickdiff = Math.round(tickdiff)
+      w.runCommand(`time add ${deltatime}`)
+      console.log('time add:' + deltatime)
   } 
 }, 100)
 
