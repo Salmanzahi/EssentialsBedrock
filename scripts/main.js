@@ -253,6 +253,7 @@ function economyset(origin, target, amount) {
 function economyinit(origin){
 
   system.runTimeout(() => {
+    const isexisted = world.scoreboard.getObjective("economy")
       if (!isexisted){
     world.scoreboard.addObjective('economy', 'dummy')
     world.sendMessage('§aEconomy system initialized !')
