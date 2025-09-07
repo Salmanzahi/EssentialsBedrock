@@ -130,7 +130,20 @@ export const commands = [
     optionalParameters: [
      { type: CustomCommandParamType.Integer, name: "condition"}
     ]
-  }
+  },
+  {
+    name: 'creator:baltop',
+    description: 'Balance Top !',
+    permissionLevel: CommandPermissionLevel.Any,
+    mandatoryParameters: [
+      { type: CustomCommandParamType.EntitySelector, name: "target" }
+    ]
+  },
+
+  // {
+  //   name: 'creator'
+  // }
+
 
 
 ]

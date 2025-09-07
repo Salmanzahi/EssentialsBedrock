@@ -6,6 +6,8 @@ import {
   CommandPermissionLevel,
   CustomCommandParamType,
   CustomCommandStatus,
+  CustomCommandRegistry,
+  CustomComponentParameters,
   
   Player,
   // Vector3,
@@ -95,9 +97,145 @@ system.beforeEvents.startup.subscribe((init) => {
   init.customCommandRegistry.registerCommand(commands[11], economyremove);
   init.customCommandRegistry.registerCommand(commands[12], economyset);
   init.customCommandRegistry.registerCommand(commands[13], realtime);
+  init.customCommandRegistry.registerCommand(commands[14], baltop);
+  // init.customCommandRegistry.registerCommand(commands[14], economy);
+  init.customCommandRegistry.registerEnum("creator:economyenum", [ "add", "remove", "set"]);
+  init.customCommandRegistry.registerEnum("creator:bankenum", [ "withdraw", "deposit"])
+  // init.customCommandRegistry.registerEnum('creator:econmyinit', ["init"])
+  init.customCommandRegistry.registerCommand(
+    {
+    name: 'creator:economy',
+    description: 'Economy Condition ! ',
+    permissionLevel: CommandPermissionLevel.Admin,
+    mandatoryParameters: [
+      
+        {
+           name: "creator:economyenum",
+           type: CustomCommandParamType.Enum,
+                },
+                {
+                  name: "selector",
+                  type: CustomCommandParamType.EntitySelector,
+                },
+                  {
+                  name: "amount",
+                  type: CustomCommandParamType.Integer,
+                },
+    ]
+  }, economy);
+
+  init.customCommandRegistry.registerCommand({
+    name: 'creator:bank',
+    description: 'A bank feature where u could withdraw and deposit money ',
+    permissionLevel: CommandPermissionLevel.Admin,
+    mandatoryParameters: [
+      {
+        name: "creator:bankenum",
+        type: CustomCommandParamType.Enum,
+      },
+      {
+        name: "selector",
+        type: CustomCommandParamType.EntitySelector,
+      },
+      {
+        name: "amount",
+        type: CustomCommandParamType.Integer,
+      },
+    ]
+  }, bank)
  
 });
 
+function baltop (origin, target){
+  const ecosc = world.scoreboard.getObjective('economy')
+  console.log(JSON.stringify(target))
+  system.runTimeout(() => {
+
+  const filtered = target.map((entity) => {
+    
+const e = world.getEntity(entity.id)
+const name = e?.nameTag || e?.typeId || 'unknown'
+let score = 0;
+try {
+  score = ecosc?.getScore(e) ?? 0;
+} catch {
+  score = 0;
+}
+return { name, score}
+// origin.sourceEntity.sendMessage(`${e.name}: $${score}`);
+    
+    })
+
+    const sort = filtered.sort((a, b) => b.score - a.score)
+
+
+    sort.forEach((entity, index) => {
+      // world.getDimension('overworld').getEntities()
+     
+      origin.sourceEntity.sendMessage(`${index + 1}. ${entity.name}: $${entity.score}`);
+    })
+     origin.sourceEntity.playSound('random.toast')
+
+    console.log(JSON.stringify(sort))
+   });
+}
+
+function bank (origin, bankenum, selector, amount){
+const banksc = world.scoreboard.getObjective('bank')
+const ecosc = world.scoreboard.getObjective('economy')
+
+system.runTimeout(() => {
+  // origin.runCommand(`bank ${amount}`)
+  
+if(ecosc == undefined){
+    origin.sourceEntity.sendMessage('You need to initisialized Economy feature by /economyinit')
+  }
+  if(banksc == undefined){
+    console.log('banksc is undefined !')
+    world.scoreboard.addObjective('bank', 'bank')
+    console.log('bank sc is added to scoreboard !')
+
+  }
+  
+  if(bankenum == "withdraw"){
+  for ( const entity of selector){
+    const e = world.getEntity(entity.id)
+    if ( banksc.getScore(e) < amount){
+      origin.sourceEntity.sendMessage('§cYou dont have enough money to withdraw !')
+    } else {
+      banksc.addScore(e, -amount)
+      ecosc.addScore(e, amount)
+      origin.sourceEntity.sendMessage('$ ' + amount + ' balance has been withdrawed from current entity !')
+    }
+    
+  }
+  } else if (bankenum == "deposit"){
+    for ( const entity of selector){
+      const e = world.getEntity(entity.id)
+      if ( ecosc.getScore(e) < amount){
+        origin.sourceEntity.sendMessage('§cYou dont have enough money to deposit !')
+      } else {
+        banksc.addScore(e, amount)
+        ecosc.addScore(e, -amount)
+        origin.sourceEntity.sendMessage('$ ' + amount + ' balance has been deposited to current entity !')
+      }
+    
+    }
+  }
+
+
+
+},)
+}
+function economy (origin, economynum, selector, amount){
+ if (economynum == "add"){
+  economyadd(origin, selector, amount)
+  } else if (economynum == "remove"){
+    economyremove(origin, selector, amount)
+  } else if (economynum == "set"){
+    economyset(origin, selector, amount)
+  }
+}
 function realtime(origin, condition) {
   if ( condition == 1 ){
     system.runTimeout(() => {
@@ -142,14 +280,14 @@ system.runInterval(()=>{
       const currenttime = Math.round(mctick(hours, minute))
       const timeofday = world.getTimeOfDay();
       const deltatime = currenttime - timeofday
-      console.log(`currenttime: ${currenttime} || timeofday: ${timeofday} || deltatime: ${deltatime}`)
+      // console.log(`currenttime: ${currenttime} || timeofday: ${timeofday} || deltatime: ${deltatime}`)
       // // w.runCommand(`time add ${currenttime}`)
       // const tickdiff = currenttime - saved_tick
       // const rounded_tickdiff = Math.round(tickdiff)
       w.runCommand(`time add ${deltatime}`)
-      console.log('time add:' + deltatime)
+      // console.log('time add:' + deltatime)
   } 
-}, 100)
+}, 1200)
 
 function economyadd(origin, target, amount){
   system.runTimeout(() => {
@@ -167,7 +305,9 @@ function economyadd(origin, target, amount){
           const e = world.getEntity(entity.id)
           const sc = world.scoreboard.getObjective("economy")
           sc.addScore(e, amount)
-          world.sendMessage('$ ' + amount + ' balance has been added to current entity !')
+          // world.sendMessage('$ ' + amount + ' balance has been added to current entity !')
+          origin.sourceEntity.sendMessage('$ ' + amount + ' balance has been added to current entity !')
+          console.log(JSON.stringify(entity.id))
         world.getDimension(e.dimension.id).playSound('random.orb', e.location)
         }
       } else {
@@ -185,7 +325,7 @@ function economyremove(origin, target, amount) {
   system.runTimeout(() => {
     const isexisted = world.scoreboard.getObjective("economy")
     if (!isexisted) {
-      world.sendMessage('§cEconomy system not initialized !')
+     origin.sourceEntity.sendMessage('§cEconomy system not initialized !')
       return
     } else {
       if (target) {
@@ -194,7 +334,7 @@ function economyremove(origin, target, amount) {
             const e = world.getEntity(entity.id)
             const sc = world.scoreboard.getObjective("economy")
             sc.addScore(e, -amount)
-            world.sendMessage('$ ' + amount + ' balance has been removed from current entity !')
+            origin.sourceEntity.sendMessage('$ ' + amount + ' balance has been removed from current entity !')
             world.getDimension(e.dimension.id).playSound('random.break', e.location)
           }
         } else {
@@ -209,7 +349,7 @@ function economyset(origin, target, amount) {
   system.runTimeout(() => {
     const isexisted = world.scoreboard.getObjective("economy")
     if (!isexisted) {
-      world.sendMessage('§cEconomy system not initialized !')
+      origin.sourceEntity.sendMessage('§cEconomy system not initialized !')
       return
     } else {
       if (target) {
@@ -218,7 +358,7 @@ function economyset(origin, target, amount) {
             const e = world.getEntity(entity.id)
             const sc = world.scoreboard.getObjective("economy")
             sc.setScore(e, amount)
-            world.sendMessage('Balance has been set to $ ' + amount + ' for current entity !')
+            origin.sourceEntity.sendMessage('Balance has been set to $ ' + amount + ' for current entity !')
             world.getDimension(e.dimension.id).playSound('random.levelup', e.location)
           }
         } else {
@@ -235,9 +375,9 @@ function economyinit(origin){
     const isexisted = world.scoreboard.getObjective("economy")
       if (!isexisted){
     world.scoreboard.addObjective('economy', 'dummy')
-    world.sendMessage('§aEconomy system initialized !')
+    origin.sourceEntity.sendMessage('§aEconomy system initialized !')
   } else {
-    world.sendMessage('§cEconomy system already initialized !')
+    origin.sourceEntity.sendMessage('§cEconomy system already initialized !')
   }
 
   })
@@ -406,6 +546,14 @@ world.afterEvents.entityDie.subscribe((event) => {
     scoreboard.addScore(player, 1);
 });
 
+world.afterEvents.playerBreakBlock.subscribe((event) => {
+  const player = event.player;
+  const scoreboard = world.scoreboard.getObjective("break");
+  if(!scoreboard) world.scoreboard.addObjective("break", "dummy");
+  scoreboard.addScore(player, 1);
+})
+
+
 // system.runInterval(() => {
 //   //get player health
 //   const player = world.getPlayers();
@@ -427,3 +575,12 @@ world.afterEvents.entityDie.subscribe((event) => {
 // })
 
 // }, 10);
+
+
+// world.afterEvents.entityHurt.subscribe((event) => {
+  
+// })
+
+// world.afterEvents.entityHurt.subscribe((event) => {
+//   const player = event.dama;
+// })
